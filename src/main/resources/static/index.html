@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Team Task Manager</title>
+
+    <style>
+        body {
+            font-family: Arial;
+            background: #f4f6f8;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: auto;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            padding: 10px;
+            width: 100%;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        li {
+            background: #eee;
+            margin: 8px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .success {
+            color: green;
+            font-size: 14px;
+        }
+
+        .done {
+            color: green;
+            font-weight: bold;
+        }
+
+        .todo {
+            color: red;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Team Task Manager</h1>
+
+    <!-- Signup -->
+    <div class="card">
+        <h2>Signup</h2>
+        <input id="name" placeholder="Enter Name">
+        <input id="email" placeholder="Enter Email">
+        <input id="password" placeholder="Enter Password">
+        <button onclick="signup()">Signup</button>
+        <p id="signupMsg" class="success"></p>
+    </div>
+
+    <!-- Project -->
+    <div class="card">
+        <h2>Create Project</h2>
+        <input id="pname" placeholder="Project Name">
+        <input id="pdesc" placeholder="Description">
+        <button onclick="createProject()">Create Project</button>
+        <p id="projectMsg" class="success"></p>
+    </div>
+
+    <!-- Task -->
+    <div class="card">
+        <h2>Create Task</h2>
+        <input id="title" placeholder="Task Title">
+        <input id="desc" placeholder="Description">
+        <input id="dueDate" placeholder="YYYY-MM-DD">
+        <button onclick="createTask()">Create Task</button>
+        <p id="taskMsg" class="success"></p>
+    </div>
+
+    <!-- Dashboard -->
+    <div class="card">
+        <h2>Task Dashboard</h2>
+        <button onclick="loadTasks()">Load Tasks</button>
+        <ul id="taskList"></ul>
+    </div>
+
+</div>
+
+<script>
+
+// Signup
+function signup() {
+    fetch('/auth/signup', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            name: document.getElementById('name').value,
+            email: document.getElementById('email').value,
+            password: document.getElementById('password').value,
+            role: "ADMIN"
+        })
+    })
+    .then(res => res.json())
+    .then(() => {
+        document.getElementById("signupMsg").innerText = "User Created!";
+    });
+}
+
+// Create Project
+function createProject() {
+    fetch('/projects', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            name: document.getElementById('pname').value,
+            description: document.getElementById('pdesc').value,
+            createdBy: 1
+        })
+    })
+    .then(res => res.json())
+    .then(() => {
+        document.getElementById("projectMsg").innerText = "Project Created!";
+    });
+}
+
+// Create Task
+function createTask() {
+    fetch('/tasks', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            title: document.getElementById('title').value,
+            description: document.getElementById('desc').value,
+            status: "TODO",
+            dueDate: document.getElementById('dueDate').value,
+            assignedTo: 1,
+            projectId: 1
+        })
+    })
+    .then(res => res.json())
+    .then(() => {
+        document.getElementById("taskMsg").innerText = "Task Created!";
+    });
+}
+
+// Load Tasks
+function loadTasks() {
+    fetch('/tasks')
+    .then(res => res.json())
+    .then(data => {
+        let list = document.getElementById("taskList");
+        list.innerHTML = "";
+
+        data.forEach(task => {
+            let item = document.createElement("li");
+
+            let statusClass = task.status === "DONE" ? "done" : "todo";
+
+            item.innerHTML = `
+                <b>${task.title}</b> 
+                <span class="${statusClass}">(${task.status})</span>
+                <br>
+                ${task.description || ""}
+                <br>
+                ${task.status !== "DONE" 
+                    ? `<button onclick="markDone(${task.id})">Mark Done</button>` 
+                    : ""}
+            `;
+
+            list.appendChild(item);
+        });
+    });
+}
+
+// Update Status
+function markDone(id) {
+    fetch(`/tasks/${id}`, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            status: "DONE"
+        })
+    })
+    .then(() => {
+        loadTasks();
+    });
+}
+
+</script>
+
+</body>
+</html>
